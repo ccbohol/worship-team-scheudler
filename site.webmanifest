@@ -1,0 +1,17 @@
+{
+  "name": "Worship Team Scheduler",
+  "short_name": "Worship Scheduler",
+  "description": "Plan worship services, rehearsals, songs, reminders, and team assignments.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f5efe4",
+  "theme_color": "#b85c38",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Worship Team Scheduler</title>
+    <meta
+      name="description"
+      content="Plan worship services, assign team roles, track rehearsals, and export schedules for your church team."
+    />
+    <meta name="theme-color" content="#b85c38" />
+    <meta property="og:title" content="Worship Team Scheduler" />
+    <meta
+      property="og:description"
+      content="A simple worship-team planning app for service dates, rehearsals, songs, reminders, and assignments."
+    />
+    <meta property="og:type" content="website" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="site.webmanifest" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Worship Team Planner</p>
+          <h1>Build clear, balanced service schedules for your team.</h1>
+          <p class="hero-text">
+            Plan each service, assign every role, and keep your worship team
+            organized in one simple place.
+          </p>
+        </div>
+        <div class="hero-card">
+          <p class="hero-card-label">Included roles</p>
+          <ul class="role-summary" id="roleSummary"></ul>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="panel panel-accent">
+          <div class="panel-header">
+            <div>
+              <p class="section-kicker">Quick Setup</p>
+              <h2>Add a service</h2>
+            </div>
+            <p class="section-note">Create a new date and assign your team.</p>
+          </div>
+
+          <form id="serviceForm" class="service-form">
+            <label>
+              <span>Service title</span>
+              <input
+                type="text"
+                id="serviceTitle"
+                name="serviceTitle"
+                placeholder="Sunday Morning Worship"
+                required
+              />
+            </label>
+            <label>
+              <span>Date</span>
+              <input type="date" id="serviceDate" name="serviceDate" required />
+            </label>
+            <label>
+              <span>Start time</span>
+              <input type="time" id="serviceTime" name="serviceTime" required />
+            </label>
+            <label>
+              <span>Rehearsal date</span>
+              <input
+                type="date"
+                id="rehearsalDate"
+                name="rehearsalDate"
+              />
+            </label>
+            <label>
+              <span>Rehearsal time</span>
+              <input
+                type="time"
+                id="rehearsalTime"
+                name="rehearsalTime"
+              />
+            </label>
+            <label>
+              <span>Song list</span>
+              <textarea
+                id="songList"
+                name="songList"
+                rows="3"
+                placeholder="List the songs for this service"
+              ></textarea>
+            </label>
+            <label>
+              <span>Reminders</span>
+              <textarea
+                id="serviceReminders"
+                name="serviceReminders"
+                rows="3"
+                placeholder="Arrival time, dress code, key transitions"
+              ></textarea>
+            </label>
+            <label>
+              <span>Notes</span>
+              <textarea
+                id="serviceNotes"
+                name="serviceNotes"
+                rows="3"
+                placeholder="Any extra details for the team"
+              ></textarea>
+            </label>
+            <button type="submit" class="primary-button">Create service</button>
+          </form>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <div>
+              <p class="section-kicker">Team Directory</p>
+              <h2>Add team members</h2>
+            </div>
+            <p class="section-note">
+              Add names once, then assign them to any service.
+            </p>
+          </div>
+
+          <form id="memberForm" class="member-form">
+            <label>
+              <span>Name</span>
+              <input
+                type="text"
+                id="memberName"
+                name="memberName"
+                placeholder="Jordan Smith"
+                required
+              />
+            </label>
+            <label>
+              <span>Default role</span>
+              <select id="memberRole" name="memberRole"></select>
+            </label>
+            <button type="submit" class="secondary-button">Add member</button>
+          </form>
+
+          <div id="memberList" class="member-list"></div>
+        </section>
+      </main>
+
+      <section class="panel schedule-panel">
+        <div class="panel-header">
+          <div>
+            <p class="section-kicker">Schedule Board</p>
+            <h2>Upcoming services</h2>
+          </div>
+          <div class="toolbar">
+            <button id="exportPdfButton" class="ghost-button" type="button">
+              Export PDF
+            </button>
+            <button id="exportWordButton" class="ghost-button" type="button">
+              Export Word
+            </button>
+            <button id="seedDemoButton" class="ghost-button" type="button">
+              Load sample data
+            </button>
+            <button id="clearAllButton" class="ghost-button danger" type="button">
+              Clear all data
+            </button>
+          </div>
+        </div>
+        <div id="emptyState" class="empty-state">
+          <h3>No services yet</h3>
+          <p>Create your first service to start scheduling the team.</p>
+        </div>
+        <div id="serviceList" class="service-list"></div>
+      </section>
+    </div>
+
+    <template id="serviceCardTemplate">
+      <article class="service-card">
+        <div class="service-card-head">
+          <div>
+            <p class="service-date"></p>
+            <h3 class="service-title"></h3>
+            <p class="service-notes"></p>
+          </div>
+          <button class="delete-service-button" type="button">Delete</button>
+        </div>
+        <div class="service-details"></div>
+        <div class="assignment-grid"></div>
+      </article>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>
