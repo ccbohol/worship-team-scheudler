@@ -4,26 +4,33 @@ const roles = [
   "Worship Leader",
   "Singer",
   "Bass Player",
-  "Keyboard Player",
+  "Keyboardist",
   "Electric Guitar Player",
   "Drummer",
   "Acoustic Guitar Player",
-  "Sound Tech",
+  "Audio Tech",
   "Multimedia Tech",
   "Livestream Tech",
 ];
 
-const demoMembers = [
-  { id: crypto.randomUUID(), name: "Micah", defaultRole: "Worship Leader" },
-  { id: crypto.randomUUID(), name: "Ava", defaultRole: "Singer" },
-  { id: crypto.randomUUID(), name: "Ezra", defaultRole: "Bass Player" },
-  { id: crypto.randomUUID(), name: "Luca", defaultRole: "Keyboard Player" },
-  { id: crypto.randomUUID(), name: "Noah", defaultRole: "Electric Guitar Player" },
-  { id: crypto.randomUUID(), name: "Caleb", defaultRole: "Drummer" },
-  { id: crypto.randomUUID(), name: "Levi", defaultRole: "Acoustic Guitar Player" },
-  { id: crypto.randomUUID(), name: "Grace", defaultRole: "Sound Tech" },
-  { id: crypto.randomUUID(), name: "Mia", defaultRole: "Multimedia Tech" },
-  { id: crypto.randomUUID(), name: "Ethan", defaultRole: "Livestream Tech" },
+const defaultMembers = [
+  { name: "Chris B.", defaultRole: "Worship Leader" },
+  { name: "Isabelle D.", defaultRole: "Worship Leader" },
+  { name: "Heather R.", defaultRole: "Worship Leader" },
+  { name: "Susie H.", defaultRole: "Worship Leader" },
+  { name: "Sheri J.", defaultRole: "Singer" },
+  { name: "Grace H.", defaultRole: "Keyboardist" },
+  { name: "Mark J.", defaultRole: "Electric Guitar Player" },
+  { name: "Reggie C.", defaultRole: "Bass Player" },
+  { name: "Cathi M.", defaultRole: "Drummer" },
+  { name: "Matt A.", defaultRole: "Drummer" },
+  { name: "Amanda C.", defaultRole: "Multimedia Tech" },
+  { name: "Jacob R.", defaultRole: "Multimedia Tech" },
+  { name: "Lilly C.", defaultRole: "Multimedia Tech" },
+  { name: "Fanny B.", defaultRole: "Multimedia Tech" },
+  { name: "Dy B.", defaultRole: "Livestream Tech" },
+  { name: "Jesus M.", defaultRole: "Audio Tech" },
+  { name: "Harry M.", defaultRole: "Audio Tech" },
 ];
 
 const initialState = {
@@ -46,6 +53,7 @@ const clearAllButton = document.querySelector("#clearAllButton");
 const exportPdfButton = document.querySelector("#exportPdfButton");
 const exportWordButton = document.querySelector("#exportWordButton");
 
+ensureDefaultMembers();
 renderRoleSummary();
 renderRoleOptions();
 render();
@@ -115,7 +123,10 @@ serviceForm.addEventListener("submit", (event) => {
 
 seedDemoButton.addEventListener("click", () => {
   if (state.members.length === 0) {
-    state.members = demoMembers.map((member) => ({ ...member }));
+    state.members = defaultMembers.map((member) => ({
+      id: crypto.randomUUID(),
+      ...member,
+    }));
   }
 
   if (state.services.length === 0) {
@@ -373,10 +384,7 @@ function loadState() {
       members: Array.isArray(parsed.members)
         ? parsed.members.map((member) => ({
             ...member,
-            defaultRole:
-              member.defaultRole === "Singer 1" || member.defaultRole === "Singer 2"
-                ? "Singer"
-                : member.defaultRole,
+            defaultRole: normalizeRoleName(member.defaultRole),
           }))
         : [],
       services: Array.isArray(parsed.services)
@@ -433,14 +441,14 @@ function createDemoService(title, daysFromToday, time, notes) {
     roles.map((role, index) => [getAssignmentKey(role, index), ""])
   );
 
-  demoMembers.forEach((member) => {
+  defaultMembers.forEach((member) => {
     const roleIndex = roles.findIndex(
       (role, index) =>
         role === member.defaultRole && !assignments[getAssignmentKey(role, index)]
     );
 
     if (roleIndex !== -1) {
-      assignments[getAssignmentKey(member.defaultRole, roleIndex)] = member.id;
+      assignments[getAssignmentKey(member.defaultRole, roleIndex)] = getMemberIdByName(member.name);
     }
   });
 
@@ -473,7 +481,8 @@ function migrateService(service) {
             service.assignments["Singer 1"] ||
             service.assignments["Singer 2"] ||
             service.assignments.Singer
-          : service.assignments[role];
+          : service.assignments[role] ||
+            service.assignments[getLegacyRoleName(role)];
 
       assignments[roleKey] = service.assignments[roleKey] || legacyValue || "";
     });
@@ -487,6 +496,57 @@ function migrateService(service) {
     reminders: service.reminders || "",
     assignments,
   };
+}
+
+function ensureDefaultMembers() {
+  const existingNames = new Set(
+    state.members.map((member) => member.name.trim().toLowerCase())
+  );
+
+  const missingMembers = defaultMembers
+    .filter((member) => !existingNames.has(member.name.trim().toLowerCase()))
+    .map((member) => ({
+      id: crypto.randomUUID(),
+      ...member,
+    }));
+
+  if (missingMembers.length > 0) {
+    state.members.push(...missingMembers);
+    persistState();
+  }
+}
+
+function normalizeRoleName(roleName) {
+  if (roleName === "Singer 1" || roleName === "Singer 2") {
+    return "Singer";
+  }
+
+  if (roleName === "Keyboard Player") {
+    return "Keyboardist";
+  }
+
+  if (roleName === "Sound Tech") {
+    return "Audio Tech";
+  }
+
+  return roleName;
+}
+
+function getLegacyRoleName(roleName) {
+  if (roleName === "Keyboardist") {
+    return "Keyboard Player";
+  }
+
+  if (roleName === "Audio Tech") {
+    return "Sound Tech";
+  }
+
+  return roleName;
+}
+
+function getMemberIdByName(name) {
+  const member = state.members.find((item) => item.name === name);
+  return member ? member.id : "";
 }
 
 function exportScheduleAsPdf() {
