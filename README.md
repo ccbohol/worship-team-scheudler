@@ -6,6 +6,36 @@ Static worship-team scheduling app built with plain HTML, CSS, and JavaScript.
 
 Open `index.html` in a browser.
 
+## Firebase shared sync
+
+This app can sync schedules and team members across devices with Cloud Firestore.
+
+1. Create a Firebase project and enable Cloud Firestore.
+2. Paste your Firebase web app config into `firebase-config.js`.
+3. Deploy the app again.
+
+### Files
+
+- `firebase-config.example.js`: template for your Firebase web config
+- `firebase-config.js`: the Firebase web config used by the published site
+
+### Firestore starter rules
+
+These starter rules are only appropriate for a trusted internal team while you are getting set up:
+
+```text
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /worshipScheduler/{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
+```
+
+For a production rollout, tighten this with Firebase Authentication.
+
 ## Push to GitHub
 
 1. Create an empty GitHub repository.
@@ -38,5 +68,3 @@ git push -u origin main
 1. Import this folder or GitHub repository into Vercel.
 2. Keep it as a static site.
 3. No build command is required.
-
-

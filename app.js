@@ -1,3 +1,12 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import {
+  doc,
+  getFirestore,
+  onSnapshot,
+  serverTimestamp,
+  setDoc,
+} from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
 const STORAGE_KEY = "worship-team-scheduler-v1";
 
 const roleSlots = [
@@ -53,12 +62,21 @@ const seedDemoButton = document.querySelector("#seedDemoButton");
 const clearAllButton = document.querySelector("#clearAllButton");
 const exportPdfButton = document.querySelector("#exportPdfButton");
 const exportWordButton = document.querySelector("#exportWordButton");
+const syncStatus = document.querySelector("#syncStatus");
 
-ensureDefaultMembers();
+let firestoreDb = null;
+let sharedDocRef = null;
+let isRemoteSyncEnabled = false;
+let isApplyingRemoteState = false;
+let remoteUnsubscribe = null;
+
+applyNormalizedState(state);
+updateSyncStatus("Sync mode: local browser storage");
 renderRoleSummary();
 renderRoleOptions();
 render();
 setDefaultServiceDate();
+initFirebaseSync();
 
 memberForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -375,6 +393,14 @@ function removeMember(memberId) {
 }
 
 function persistState() {
+  persistLocalState();
+
+  if (isRemoteSyncEnabled && !isApplyingRemoteState) {
+    syncRemoteState();
+  }
+}
+
+function persistLocalState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
@@ -387,17 +413,7 @@ function loadState() {
 
     const parsed = JSON.parse(storedValue);
 
-    return {
-      members: Array.isArray(parsed.members)
-        ? parsed.members.map((member) => ({
-            ...member,
-            defaultRole: normalizeRoleName(member.defaultRole),
-          }))
-        : [],
-      services: Array.isArray(parsed.services)
-        ? parsed.services.map((service) => migrateService(service))
-        : [],
-    };
+    return parsed;
   } catch (error) {
     return structuredClone(initialState);
   }
@@ -552,9 +568,22 @@ function getSongListItems(songList) {
     .filter(Boolean);
 }
 
-function ensureDefaultMembers() {
+function applyNormalizedState(sourceState) {
+  const normalized = normalizeIncomingState(sourceState);
+  state.members = normalized.members;
+  state.services = normalized.services;
+}
+
+function normalizeIncomingState(sourceState) {
+  const normalizedMembers = Array.isArray(sourceState.members)
+    ? sourceState.members.map((member) => ({
+        ...member,
+        defaultRole: normalizeRoleName(member.defaultRole),
+      }))
+    : [];
+
   const existingNames = new Set(
-    state.members.map((member) => member.name.trim().toLowerCase())
+    normalizedMembers.map((member) => member.name.trim().toLowerCase())
   );
 
   const missingMembers = defaultMembers
@@ -564,10 +593,12 @@ function ensureDefaultMembers() {
       ...member,
     }));
 
-  if (missingMembers.length > 0) {
-    state.members.push(...missingMembers);
-    persistState();
-  }
+  return {
+    members: [...normalizedMembers, ...missingMembers],
+    services: Array.isArray(sourceState.services)
+      ? sourceState.services.map((service) => migrateService(service))
+      : [],
+  };
 }
 
 function normalizeRoleName(roleName) {
@@ -601,6 +632,77 @@ function getLegacyRoleName(roleName) {
 function getMemberIdByName(name) {
   const member = state.members.find((item) => item.name === name);
   return member ? member.id : "";
+}
+
+async function initFirebaseSync() {
+  try {
+    const firebaseModule = await import("./firebase-config.js");
+    const firebaseConfig = firebaseModule.firebaseConfig;
+    const firestoreCollection = firebaseModule.firestoreCollection || "worshipScheduler";
+    const firestoreDocument = firebaseModule.firestoreDocument || "sharedState";
+
+    if (!firebaseConfig || !firebaseConfig.projectId) {
+      updateSyncStatus("Sync mode: local browser storage");
+      return;
+    }
+
+    const firebaseApp = initializeApp(firebaseConfig);
+    firestoreDb = getFirestore(firebaseApp);
+    sharedDocRef = doc(firestoreDb, firestoreCollection, firestoreDocument);
+    isRemoteSyncEnabled = true;
+    updateSyncStatus("Sync mode: connecting to Firebase...");
+
+    remoteUnsubscribe = onSnapshot(
+      sharedDocRef,
+      (snapshot) => {
+        if (!snapshot.exists()) {
+          updateSyncStatus("Sync mode: Firebase connected. Creating shared team data...");
+          syncRemoteState();
+          return;
+        }
+
+        const remoteState = {
+          members: Array.isArray(snapshot.data().members) ? snapshot.data().members : [],
+          services: Array.isArray(snapshot.data().services) ? snapshot.data().services : [],
+        };
+
+        isApplyingRemoteState = true;
+        applyNormalizedState(remoteState);
+        persistLocalState();
+        renderRoleOptions();
+        render();
+        isApplyingRemoteState = false;
+        updateSyncStatus("Sync mode: Firebase shared team data connected");
+      },
+      () => {
+        isRemoteSyncEnabled = false;
+        updateSyncStatus("Sync mode: Firebase error. Using local browser storage");
+      }
+    );
+  } catch (error) {
+    updateSyncStatus("Sync mode: local browser storage");
+  }
+}
+
+async function syncRemoteState() {
+  if (!sharedDocRef) {
+    return;
+  }
+
+  try {
+    await setDoc(sharedDocRef, {
+      members: state.members,
+      services: state.services,
+      updatedAt: serverTimestamp(),
+    });
+    updateSyncStatus("Sync mode: Firebase shared team data connected");
+  } catch (error) {
+    updateSyncStatus("Sync mode: Firebase error. Using local browser storage");
+  }
+}
+
+function updateSyncStatus(message) {
+  syncStatus.textContent = message;
 }
 
 function exportScheduleAsPdf() {
