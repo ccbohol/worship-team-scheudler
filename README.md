@@ -38,3 +38,4 @@ git push -u origin main
 1. Import this folder or GitHub repository into Vercel.
 2. Keep it as a static site.
 3. No build command is required.
+
