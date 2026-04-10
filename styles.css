@@ -1,16 +1,19 @@
 :root {
-  --bg: #f5efe4;
-  --bg-strong: #ead7bc;
-  --panel: rgba(255, 250, 242, 0.86);
-  --panel-strong: #fff8ef;
-  --text: #2f241b;
-  --muted: #765f49;
-  --line: rgba(92, 63, 28, 0.14);
-  --accent: #b85c38;
-  --accent-dark: #8d3f20;
-  --green: #44624a;
-  --danger: #8a2f2f;
-  --shadow: 0 20px 50px rgba(58, 33, 10, 0.12);
+  --bg: #07111f;
+  --bg-strong: #0c1a31;
+  --bg-soft: #132646;
+  --panel: rgba(12, 26, 49, 0.8);
+  --panel-strong: rgba(17, 35, 66, 0.92);
+  --panel-highlight: rgba(24, 48, 88, 0.88);
+  --text: #eef4ff;
+  --muted: #a8b7d4;
+  --line: rgba(146, 181, 255, 0.16);
+  --accent: #3fb6d8;
+  --accent-strong: #78d0ef;
+  --accent-warm: #e2b86f;
+  --success: #74c69d;
+  --danger: #ff8c8c;
+  --shadow: 0 24px 70px rgba(2, 8, 20, 0.45);
 }
 
 * {
@@ -23,8 +26,9 @@ body {
   font-family: "Manrope", sans-serif;
   color: var(--text);
   background:
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.8), transparent 34%),
-    linear-gradient(135deg, #f8f2e8 0%, #eadcc6 48%, #dbc6aa 100%);
+    radial-gradient(circle at top left, rgba(63, 182, 216, 0.18), transparent 28%),
+    radial-gradient(circle at top right, rgba(226, 184, 111, 0.14), transparent 24%),
+    linear-gradient(160deg, #040b16 0%, #0b1730 42%, #132646 100%);
 }
 
 button,
@@ -42,7 +46,7 @@ select {
 
 .hero {
   display: grid;
-  grid-template-columns: 1.4fr 0.9fr;
+  grid-template-columns: minmax(0, 1.5fr) minmax(300px, 0.82fr);
   gap: 24px;
   align-items: stretch;
   margin-bottom: 28px;
@@ -51,7 +55,7 @@ select {
 .hero-copy,
 .hero-card,
 .panel {
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(154, 186, 255, 0.12);
   border-radius: 28px;
   background: var(--panel);
   backdrop-filter: blur(12px);
@@ -60,6 +64,10 @@ select {
 
 .hero-copy {
   padding: 34px;
+  background:
+    radial-gradient(circle at top left, rgba(120, 208, 239, 0.12), transparent 35%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.03), rgba(11, 23, 48, 0.3)),
+    var(--panel);
 }
 
 .eyebrow,
@@ -69,8 +77,48 @@ select {
   text-transform: uppercase;
   letter-spacing: 0.16em;
   font-size: 0.76rem;
-  color: var(--accent-dark);
+  color: var(--accent-warm);
   font-weight: 700;
+}
+
+.brand-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.brand-mark {
+  width: 62px;
+  height: 62px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  background:
+    linear-gradient(160deg, rgba(63, 182, 216, 0.9), rgba(45, 127, 226, 0.72));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    0 16px 30px rgba(13, 37, 79, 0.45);
+}
+
+.brand-mark-inner {
+  font-family: "Fraunces", serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #f5fbff;
+}
+
+.brand-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.brand-name {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--text);
 }
 
 h1,
@@ -82,8 +130,10 @@ h3 {
 }
 
 h1 {
-  font-size: clamp(2.3rem, 5vw, 4.4rem);
-  max-width: 12ch;
+  font-size: clamp(2.6rem, 5vw, 4.8rem);
+  max-width: 11ch;
+  margin-bottom: 14px;
+  letter-spacing: -0.03em;
 }
 
 .hero-text,
@@ -94,10 +144,27 @@ h1 {
   line-height: 1.6;
 }
 
+.hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.hero-badge {
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(120, 208, 239, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--accent-strong);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
 .hero-card {
   padding: 28px;
   background:
-    linear-gradient(160deg, rgba(184, 92, 56, 0.18), rgba(255, 255, 255, 0.75)),
+    linear-gradient(180deg, rgba(63, 182, 216, 0.12), rgba(18, 37, 68, 0.4)),
     var(--panel-strong);
 }
 
@@ -112,14 +179,14 @@ h1 {
 .role-summary li {
   padding: 12px 14px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.66);
-  border: 1px solid rgba(184, 92, 56, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(120, 208, 239, 0.14);
   font-weight: 600;
 }
 
 .layout {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.72fr);
   gap: 24px;
   margin-bottom: 24px;
 }
@@ -128,9 +195,13 @@ h1 {
   padding: 24px;
 }
 
+.panel-compact {
+  padding: 20px;
+}
+
 .panel-accent {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 244, 233, 0.92)),
+    linear-gradient(180deg, rgba(63, 182, 216, 0.08), rgba(15, 33, 60, 0.35)),
     var(--panel);
 }
 
@@ -143,13 +214,29 @@ h1 {
 }
 
 .panel-header h2 {
-  font-size: 1.8rem;
+  font-size: 1.65rem;
 }
 
 .service-form,
 .member-form {
   display: grid;
   gap: 14px;
+}
+
+.panel-compact .panel-header {
+  margin-bottom: 14px;
+}
+
+.panel-compact .panel-header h2 {
+  font-size: 1.45rem;
+}
+
+.panel-compact .section-note {
+  max-width: 22ch;
+}
+
+.panel-compact .member-form {
+  gap: 12px;
 }
 
 label {
@@ -165,8 +252,21 @@ select {
   border: 1px solid var(--line);
   border-radius: 16px;
   padding: 13px 14px;
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(6, 14, 28, 0.72);
   color: var(--text);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgba(168, 183, 212, 0.72);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: rgba(120, 208, 239, 0.45);
+  box-shadow: 0 0 0 4px rgba(63, 182, 216, 0.12);
 }
 
 textarea {
@@ -186,19 +286,20 @@ button:hover {
 }
 
 .primary-button {
-  background: var(--accent);
-  color: #fff8f1;
+  background: linear-gradient(135deg, var(--accent) 0%, #2d7fe2 100%);
+  color: #effbff;
   font-weight: 700;
+  box-shadow: 0 12px 24px rgba(45, 127, 226, 0.22);
 }
 
 .secondary-button {
-  background: var(--green);
-  color: white;
+  background: linear-gradient(135deg, #1a8f76 0%, var(--success) 100%);
+  color: #f3fff9;
   font-weight: 700;
 }
 
 .ghost-button {
-  background: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.05);
   color: var(--text);
   border: 1px solid var(--line);
 }
@@ -206,6 +307,11 @@ button:hover {
 .ghost-button.danger,
 .delete-service-button {
   color: var(--danger);
+}
+
+.delete-service-button {
+  background: rgba(255, 140, 140, 0.08);
+  border: 1px solid rgba(255, 140, 140, 0.18);
 }
 
 .toolbar {
@@ -224,6 +330,9 @@ button:hover {
   display: grid;
   gap: 10px;
   margin-top: 18px;
+  max-height: 360px;
+  overflow: auto;
+  padding-right: 4px;
 }
 
 .member-chip {
@@ -231,9 +340,9 @@ button:hover {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  padding: 12px 14px;
+  padding: 11px 12px;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.74);
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--line);
 }
 
@@ -253,9 +362,9 @@ button:hover {
 .empty-state {
   text-align: center;
   padding: 42px 20px;
-  border: 1px dashed rgba(92, 63, 28, 0.22);
+  border: 1px dashed rgba(120, 208, 239, 0.18);
   border-radius: 24px;
-  background: rgba(255, 255, 255, 0.36);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .service-list {
@@ -266,7 +375,9 @@ button:hover {
 .service-card {
   padding: 22px;
   border-radius: 24px;
-  background: rgba(255, 255, 255, 0.76);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.015)),
+    var(--panel-strong);
   border: 1px solid var(--line);
 }
 
@@ -280,7 +391,7 @@ button:hover {
 
 .service-date {
   margin: 0 0 6px;
-  color: var(--accent-dark);
+  color: var(--accent-warm);
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -301,8 +412,8 @@ button:hover {
 .detail-card {
   padding: 14px 16px;
   border-radius: 18px;
-  background: rgba(255, 248, 239, 0.9);
-  border: 1px solid rgba(92, 63, 28, 0.1);
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(120, 208, 239, 0.1);
 }
 
 .detail-card p {
@@ -311,7 +422,7 @@ button:hover {
 
 .detail-label {
   margin-bottom: 4px;
-  color: var(--accent-dark);
+  color: var(--accent-warm);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -329,8 +440,8 @@ button:hover {
   gap: 8px;
   padding: 14px;
   border-radius: 18px;
-  background: var(--panel-strong);
-  border: 1px solid rgba(92, 63, 28, 0.1);
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(120, 208, 239, 0.1);
 }
 
 .assignment-card label {
@@ -351,8 +462,8 @@ button:hover {
   width: fit-content;
   padding: 5px 10px;
   border-radius: 999px;
-  background: rgba(68, 98, 74, 0.12);
-  color: var(--green);
+  background: rgba(63, 182, 216, 0.12);
+  color: var(--accent-strong);
   font-size: 0.8rem;
   font-weight: 700;
 }
@@ -365,8 +476,10 @@ button:hover {
   }
 
   .service-card-head,
-  .panel-header {
+  .panel-header,
+  .brand-row {
     flex-direction: column;
+    align-items: flex-start;
   }
 
   .page-shell {
