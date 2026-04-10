@@ -48,6 +48,18 @@
             <span class="hero-badge">Volunteer Scheduling</span>
             <span class="hero-badge">Export Ready</span>
           </div>
+          <div class="auth-row">
+            <button id="signInButton" class="secondary-button" type="button">
+              Sign in with Google
+            </button>
+            <button id="signOutButton" class="ghost-button" type="button" hidden>
+              Sign out
+            </button>
+          </div>
+          <div id="authInfo" class="auth-info" hidden>
+            <p id="authUser" class="auth-user"></p>
+            <p id="authUid" class="auth-uid"></p>
+          </div>
           <p id="syncStatus" class="sync-status">Sync mode: local browser storage</p>
         </div>
         <div class="hero-card">

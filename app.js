@@ -1,5 +1,12 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
 import {
+  getAuth,
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  signInWithPopup,
+  signOut as firebaseSignOut,
+} from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+import {
   doc,
   getFirestore,
   onSnapshot,
@@ -63,12 +70,22 @@ const clearAllButton = document.querySelector("#clearAllButton");
 const exportPdfButton = document.querySelector("#exportPdfButton");
 const exportWordButton = document.querySelector("#exportWordButton");
 const syncStatus = document.querySelector("#syncStatus");
+const signInButton = document.querySelector("#signInButton");
+const signOutButton = document.querySelector("#signOutButton");
+const authInfo = document.querySelector("#authInfo");
+const authUser = document.querySelector("#authUser");
+const authUid = document.querySelector("#authUid");
 
+let firebaseApp = null;
+let firebaseAuth = null;
 let firestoreDb = null;
 let sharedDocRef = null;
+let googleProvider = null;
 let isRemoteSyncEnabled = false;
 let isApplyingRemoteState = false;
 let remoteUnsubscribe = null;
+let isFirebaseConfigured = false;
+let currentUser = null;
 
 applyNormalizedState(state);
 updateSyncStatus("Sync mode: local browser storage");
@@ -77,6 +94,26 @@ renderRoleOptions();
 render();
 setDefaultServiceDate();
 initFirebaseSync();
+
+signInButton.addEventListener("click", async () => {
+  if (!firebaseAuth || !googleProvider) {
+    return;
+  }
+
+  try {
+    await signInWithPopup(firebaseAuth, googleProvider);
+  } catch (error) {
+    updateSyncStatus("Sign-in failed. Check Google sign-in settings and authorized domains.");
+  }
+});
+
+signOutButton.addEventListener("click", async () => {
+  if (!firebaseAuth) {
+    return;
+  }
+
+  await firebaseSignOut(firebaseAuth);
+});
 
 memberForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -191,6 +228,7 @@ function render() {
   renderMembers();
   renderServices();
   syncExportButtons();
+  syncInteractionLock();
 }
 
 function renderRoleSummary() {
@@ -278,6 +316,7 @@ function renderServices() {
       persistState();
       render();
     });
+    deleteButton.disabled = !canEditSharedData();
 
     roleSlots.forEach((slot, index) => {
       const assignmentCard = document.createElement("div");
@@ -296,6 +335,7 @@ function renderServices() {
         persistState();
         render();
       });
+      select.disabled = !canEditSharedData();
 
       const status = document.createElement("span");
       status.className = "status-pill";
@@ -331,6 +371,20 @@ function syncExportButtons() {
   const hasServices = state.services.length > 0;
   exportPdfButton.disabled = !hasServices;
   exportWordButton.disabled = !hasServices;
+}
+
+function syncInteractionLock() {
+  const editingEnabled = canEditSharedData();
+  toggleFormDisabled(serviceForm, !editingEnabled);
+  toggleFormDisabled(memberForm, !editingEnabled);
+  seedDemoButton.disabled = !editingEnabled;
+  clearAllButton.disabled = !editingEnabled;
+}
+
+function toggleFormDisabled(formElement, disabled) {
+  Array.from(formElement.elements).forEach((element) => {
+    element.disabled = disabled;
+  });
 }
 
 function renderServiceDetails(container, service) {
@@ -643,49 +697,35 @@ async function initFirebaseSync() {
 
     if (!firebaseConfig || !firebaseConfig.projectId) {
       updateSyncStatus("Sync mode: local browser storage");
+      updateAuthUI();
       return;
     }
 
-    const firebaseApp = initializeApp(firebaseConfig);
+    firebaseApp = initializeApp(firebaseConfig);
+    firebaseAuth = getAuth(firebaseApp);
+    googleProvider = new GoogleAuthProvider();
+    googleProvider.setCustomParameters({ prompt: "select_account" });
     firestoreDb = getFirestore(firebaseApp);
     sharedDocRef = doc(firestoreDb, firestoreCollection, firestoreDocument);
-    isRemoteSyncEnabled = true;
-    updateSyncStatus("Sync mode: connecting to Firebase...");
+    isFirebaseConfigured = true;
+    updateSyncStatus("Authentication required: sign in with Google to access shared team data");
+    updateAuthUI();
 
-    remoteUnsubscribe = onSnapshot(
-      sharedDocRef,
-      (snapshot) => {
-        if (!snapshot.exists()) {
-          updateSyncStatus("Sync mode: Firebase connected. Creating shared team data...");
-          syncRemoteState();
-          return;
-        }
-
-        const remoteState = {
-          members: Array.isArray(snapshot.data().members) ? snapshot.data().members : [],
-          services: Array.isArray(snapshot.data().services) ? snapshot.data().services : [],
-        };
-
-        isApplyingRemoteState = true;
-        applyNormalizedState(remoteState);
-        persistLocalState();
-        renderRoleOptions();
-        render();
-        isApplyingRemoteState = false;
-        updateSyncStatus("Sync mode: Firebase shared team data connected");
-      },
-      () => {
-        isRemoteSyncEnabled = false;
-        updateSyncStatus("Sync mode: Firebase error. Using local browser storage");
-      }
-    );
+    onAuthStateChanged(firebaseAuth, (user) => {
+      currentUser = user;
+      updateAuthUI();
+      attachSharedStateListener();
+      syncInteractionLock();
+      render();
+    });
   } catch (error) {
     updateSyncStatus("Sync mode: local browser storage");
+    updateAuthUI();
   }
 }
 
 async function syncRemoteState() {
-  if (!sharedDocRef) {
+  if (!sharedDocRef || !currentUser) {
     return;
   }
 
@@ -697,12 +737,93 @@ async function syncRemoteState() {
     });
     updateSyncStatus("Sync mode: Firebase shared team data connected");
   } catch (error) {
-    updateSyncStatus("Sync mode: Firebase error. Using local browser storage");
+    if (error && error.code === "permission-denied") {
+      updateSyncStatus("Signed in, but this account is not approved yet. Add this UID to allowedUsers.");
+    } else {
+      updateSyncStatus("Sync mode: Firebase error. Using local browser storage");
+    }
   }
 }
 
 function updateSyncStatus(message) {
   syncStatus.textContent = message;
+}
+
+function updateAuthUI() {
+  const signedIn = Boolean(currentUser);
+  signInButton.hidden = signedIn || !isFirebaseConfigured;
+  signOutButton.hidden = !signedIn;
+  authInfo.hidden = !signedIn;
+
+  if (signedIn) {
+    authUser.textContent = `Signed in as ${currentUser.email || currentUser.displayName || "Firebase user"}`;
+    authUid.textContent = `User UID: ${currentUser.uid}`;
+  } else {
+    authUser.textContent = "";
+    authUid.textContent = "";
+  }
+}
+
+function attachSharedStateListener() {
+  if (remoteUnsubscribe) {
+    remoteUnsubscribe();
+    remoteUnsubscribe = null;
+  }
+
+  isRemoteSyncEnabled = false;
+
+  if (!isFirebaseConfigured || !currentUser || !sharedDocRef) {
+    updateSyncStatus(
+      isFirebaseConfigured
+        ? "Authentication required: sign in with Google to access shared team data"
+        : "Sync mode: local browser storage"
+    );
+    return;
+  }
+
+  updateSyncStatus("Checking Firebase access...");
+
+  remoteUnsubscribe = onSnapshot(
+    sharedDocRef,
+    (snapshot) => {
+      isRemoteSyncEnabled = true;
+
+      if (!snapshot.exists()) {
+        updateSyncStatus("Sync mode: Firebase connected. Creating shared team data...");
+        syncRemoteState();
+        return;
+      }
+
+      const remoteState = {
+        members: Array.isArray(snapshot.data().members) ? snapshot.data().members : [],
+        services: Array.isArray(snapshot.data().services) ? snapshot.data().services : [],
+      };
+
+      isApplyingRemoteState = true;
+      applyNormalizedState(remoteState);
+      persistLocalState();
+      renderRoleOptions();
+      render();
+      isApplyingRemoteState = false;
+      updateSyncStatus("Sync mode: Firebase shared team data connected");
+    },
+    (error) => {
+      isRemoteSyncEnabled = false;
+      if (error && error.code === "permission-denied") {
+        updateSyncStatus("Signed in, but this account is not approved yet. Add this UID to allowedUsers.");
+      } else {
+        updateSyncStatus("Sync mode: Firebase error. Using local browser storage");
+      }
+    }
+  );
+}
+
+function canEditSharedData() {
+  if (!isFirebaseConfigured) {
+    return true;
+  }
+
+  return Boolean(currentUser && isRemoteSyncEnabled);
 }
 
 function exportScheduleAsPdf() {

@@ -164,6 +164,38 @@ h1 {
   font-weight: 700;
 }
 
+.auth-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.auth-info {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(120, 208, 239, 0.12);
+}
+
+.auth-user,
+.auth-uid {
+  margin: 0;
+}
+
+.auth-user {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.auth-uid {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  word-break: break-all;
+}
+
 .sync-status {
   margin: 18px 0 0;
   color: var(--muted);
@@ -353,6 +385,14 @@ button:hover {
   transform: none;
 }
 
+button:disabled,
+input:disabled,
+textarea:disabled,
+select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .member-list {
   display: grid;
   gap: 10px;
@@ -517,6 +557,10 @@ button:hover {
   .brand-row {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .auth-row {
+    width: 100%;
   }
 
   .page-shell {
