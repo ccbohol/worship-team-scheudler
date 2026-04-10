@@ -39,3 +39,4 @@ git push -u origin main
 2. Keep it as a static site.
 3. No build command is required.
 
+
