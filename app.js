@@ -1,16 +1,17 @@
 const STORAGE_KEY = "worship-team-scheduler-v1";
 
-const roles = [
-  "Worship Leader",
-  "Singer",
-  "Bass Player",
-  "Keyboardist",
-  "Electric Guitar Player",
-  "Drummer",
-  "Acoustic Guitar Player",
-  "Audio Tech",
-  "Multimedia Tech",
-  "Livestream Tech",
+const roleSlots = [
+  { role: "Worship Leader" },
+  { role: "Singer", label: "Singer 1" },
+  { role: "Singer", label: "Singer 2" },
+  { role: "Bass Player" },
+  { role: "Keyboardist" },
+  { role: "Electric Guitar Player" },
+  { role: "Drummer" },
+  { role: "Acoustic Guitar Player" },
+  { role: "Audio Tech" },
+  { role: "Multimedia Tech" },
+  { role: "Livestream Tech" },
 ];
 
 const defaultMembers = [
@@ -89,8 +90,10 @@ serviceForm.addEventListener("submit", (event) => {
   const serviceTitle = formData.get("serviceTitle").toString().trim();
   const serviceDate = formData.get("serviceDate").toString();
   const serviceTime = formData.get("serviceTime").toString();
-  const rehearsalDate = formData.get("rehearsalDate").toString();
-  const rehearsalTime = formData.get("rehearsalTime").toString();
+  const sundayRehearsalDate = formData.get("sundayRehearsalDate").toString();
+  const sundayRehearsalTime = formData.get("sundayRehearsalTime").toString();
+  const thursdayRehearsalDate = formData.get("thursdayRehearsalDate").toString();
+  const thursdayRehearsalTime = formData.get("thursdayRehearsalTime").toString();
   const songList = formData.get("songList").toString().trim();
   const reminders = formData.get("serviceReminders").toString().trim();
   const serviceNotes = formData.get("serviceNotes").toString().trim();
@@ -104,13 +107,15 @@ serviceForm.addEventListener("submit", (event) => {
     title: serviceTitle,
     date: serviceDate,
     time: serviceTime,
-    rehearsalDate,
-    rehearsalTime,
+    sundayRehearsalDate,
+    sundayRehearsalTime,
+    thursdayRehearsalDate,
+    thursdayRehearsalTime,
     songList,
     reminders,
     notes: serviceNotes,
     assignments: Object.fromEntries(
-      roles.map((role, index) => [getAssignmentKey(role, index), ""])
+      roleSlots.map((slot, index) => [getAssignmentKey(slot.role, index), ""])
     ),
   });
 
@@ -173,7 +178,7 @@ function render() {
 function renderRoleSummary() {
   roleSummary.innerHTML = "";
 
-  [...new Set(roles)].forEach((role) => {
+  getRoleSummaryLabels().forEach((role) => {
     const item = document.createElement("li");
     item.textContent = role;
     roleSummary.append(item);
@@ -181,7 +186,7 @@ function renderRoleSummary() {
 }
 
 function renderRoleOptions() {
-  memberRole.innerHTML = [...new Set(roles)]
+  memberRole.innerHTML = [...new Set(roleSlots.map((slot) => slot.role))]
     .map((role) => `<option value="${role}">${role}</option>`)
     .join("");
 }
@@ -256,18 +261,18 @@ function renderServices() {
       render();
     });
 
-    roles.forEach((roleName, index) => {
+    roleSlots.forEach((slot, index) => {
       const assignmentCard = document.createElement("div");
       assignmentCard.className = "assignment-card";
 
       const label = document.createElement("label");
       const roleLabel = document.createElement("span");
-      roleLabel.textContent = roleName;
+      roleLabel.textContent = slot.label || slot.role;
 
       const select = document.createElement("select");
-      const roleKey = getAssignmentKey(roleName, index);
+      const roleKey = getAssignmentKey(slot.role, index);
       const assignedMemberId = service.assignments[roleKey] || "";
-      select.innerHTML = buildMemberOptions(roleName, assignedMemberId);
+      select.innerHTML = buildMemberOptions(slot.role, assignedMemberId);
       select.addEventListener("change", (event) => {
         service.assignments[roleKey] = event.target.value;
         persistState();
@@ -315,19 +320,17 @@ function renderServiceDetails(container, service) {
 
   const detailItems = [
     {
-      label: "Rehearsal",
-      value:
-        service.rehearsalDate && service.rehearsalTime
-          ? `${formatDate(service.rehearsalDate)} at ${formatTime(service.rehearsalTime)}`
-          : service.rehearsalDate
-            ? formatDate(service.rehearsalDate)
-            : service.rehearsalTime
-              ? formatTime(service.rehearsalTime)
-              : "No rehearsal scheduled.",
+      label: "Sunday Rehearsal",
+      value: formatRehearsal(service.sundayRehearsalDate, service.sundayRehearsalTime),
+    },
+    {
+      label: "Thursday Rehearsal",
+      value: formatRehearsal(service.thursdayRehearsalDate, service.thursdayRehearsalTime),
     },
     {
       label: "Song List",
-      value: service.songList || "No song list added.",
+      list: getSongListItems(service.songList),
+      empty: "No song list added.",
     },
     {
       label: "Reminders",
@@ -343,8 +346,11 @@ function renderServiceDetails(container, service) {
     label.className = "detail-label";
     label.textContent = item.label;
 
-    const value = document.createElement("p");
-    value.textContent = item.value;
+    const value = item.list ? renderDetailList(item.list, item.empty) : document.createElement("p");
+
+    if (!item.list) {
+      value.textContent = item.value;
+    }
 
     detailCard.append(label, value);
     container.append(detailCard);
@@ -355,7 +361,8 @@ function removeMember(memberId) {
   state.members = state.members.filter((member) => member.id !== memberId);
 
   state.services.forEach((service) => {
-    roles.forEach((role, index) => {
+    roleSlots.forEach((slot, index) => {
+      const role = slot.role;
       const roleKey = getAssignmentKey(role, index);
       if (service.assignments[roleKey] === memberId) {
         service.assignments[roleKey] = "";
@@ -438,13 +445,13 @@ function createDemoService(title, daysFromToday, time, notes) {
   date.setDate(date.getDate() + daysFromToday);
   const serviceDate = date.toISOString().slice(0, 10);
   const assignments = Object.fromEntries(
-    roles.map((role, index) => [getAssignmentKey(role, index), ""])
+    roleSlots.map((slot, index) => [getAssignmentKey(slot.role, index), ""])
   );
 
   defaultMembers.forEach((member) => {
-    const roleIndex = roles.findIndex(
-      (role, index) =>
-        role === member.defaultRole && !assignments[getAssignmentKey(role, index)]
+    const roleIndex = roleSlots.findIndex(
+      (slot, index) =>
+        slot.role === member.defaultRole && !assignments[getAssignmentKey(slot.role, index)]
     );
 
     if (roleIndex !== -1) {
@@ -457,6 +464,12 @@ function createDemoService(title, daysFromToday, time, notes) {
     title,
     date: serviceDate,
     time,
+    sundayRehearsalDate: serviceDate,
+    sundayRehearsalTime: "07:45",
+    thursdayRehearsalDate: "",
+    thursdayRehearsalTime: "",
+    songList: "",
+    reminders: "",
     notes,
     assignments,
   };
@@ -468,11 +481,12 @@ function getAssignmentKey(role, index) {
 
 function migrateService(service) {
   const assignments = Object.fromEntries(
-    roles.map((role, index) => [getAssignmentKey(role, index), ""])
+    roleSlots.map((slot, index) => [getAssignmentKey(slot.role, index), ""])
   );
 
   if (service.assignments && typeof service.assignments === "object") {
-    roles.forEach((role, index) => {
+    roleSlots.forEach((slot, index) => {
+      const role = slot.role;
       const roleKey = getAssignmentKey(role, index);
       const legacyValue =
         role === "Singer"
@@ -490,12 +504,52 @@ function migrateService(service) {
 
   return {
     ...service,
-    rehearsalDate: service.rehearsalDate || "",
-    rehearsalTime: service.rehearsalTime || "",
+    sundayRehearsalDate: service.sundayRehearsalDate || service.rehearsalDate || "",
+    sundayRehearsalTime: service.sundayRehearsalTime || service.rehearsalTime || "",
+    thursdayRehearsalDate: service.thursdayRehearsalDate || "",
+    thursdayRehearsalTime: service.thursdayRehearsalTime || "",
     songList: service.songList || "",
     reminders: service.reminders || "",
     assignments,
   };
+}
+
+function getRoleSummaryLabels() {
+  const counts = new Map();
+
+  roleSlots.forEach((slot) => {
+    counts.set(slot.role, (counts.get(slot.role) || 0) + 1);
+  });
+
+  return Array.from(counts.entries()).map(([role, count]) =>
+    count > 1 ? `${role} x${count}` : role
+  );
+}
+
+function renderDetailList(items, emptyText) {
+  if (items.length === 0) {
+    const empty = document.createElement("p");
+    empty.textContent = emptyText;
+    return empty;
+  }
+
+  const list = document.createElement("ol");
+  list.className = "detail-list";
+
+  items.forEach((item) => {
+    const row = document.createElement("li");
+    row.textContent = item;
+    list.append(row);
+  });
+
+  return list;
+}
+
+function getSongListItems(songList) {
+  return songList
+    .split("\n")
+    .map((item) => item.replace(/^\s*\d+[\).\-\s]*/, "").trim())
+    .filter(Boolean);
 }
 
 function ensureDefaultMembers() {
@@ -584,13 +638,13 @@ function exportScheduleAsWord() {
 function buildExportDocument(mode) {
   const servicesMarkup = state.services
     .map((service) => {
-      const assignments = roles
-        .map((role, index) => {
-          const memberId = service.assignments[getAssignmentKey(role, index)] || "";
+      const assignments = roleSlots
+        .map((slot, index) => {
+          const memberId = service.assignments[getAssignmentKey(slot.role, index)] || "";
           const memberName = getMemberName(memberId);
           return `
             <tr>
-              <td>${escapeHtml(role)}</td>
+              <td>${escapeHtml(slot.label || slot.role)}</td>
               <td>${escapeHtml(memberName || "Unassigned")}</td>
             </tr>
           `;
@@ -603,11 +657,14 @@ function buildExportDocument(mode) {
           <p class="meta">${escapeHtml(formatDate(service.date))} at ${escapeHtml(
         formatTime(service.time)
       )}</p>
-          <p class="notes"><strong>Rehearsal:</strong> ${escapeHtml(
-            formatRehearsal(service)
+          <p class="notes"><strong>Sunday Rehearsal:</strong> ${escapeHtml(
+            formatRehearsal(service.sundayRehearsalDate, service.sundayRehearsalTime)
+          )}</p>
+          <p class="notes"><strong>Thursday Rehearsal:</strong> ${escapeHtml(
+            formatRehearsal(service.thursdayRehearsalDate, service.thursdayRehearsalTime)
           )}</p>
           <p class="notes"><strong>Song List:</strong> ${escapeHtml(
-            service.songList || "No song list provided."
+            formatSongListForExport(service.songList)
           )}</p>
           <p class="notes"><strong>Reminders:</strong> ${escapeHtml(
             service.reminders || "No reminders provided."
@@ -711,17 +768,29 @@ function escapeHtml(value) {
 }
 
 function formatRehearsal(service) {
-  if (service.rehearsalDate && service.rehearsalTime) {
-    return `${formatDate(service.rehearsalDate)} at ${formatTime(service.rehearsalTime)}`;
+  const [dateValue, timeValue] = arguments;
+
+  if (dateValue && timeValue) {
+    return `${formatDate(dateValue)} at ${formatTime(timeValue)}`;
   }
 
-  if (service.rehearsalDate) {
-    return formatDate(service.rehearsalDate);
+  if (dateValue) {
+    return formatDate(dateValue);
   }
 
-  if (service.rehearsalTime) {
-    return formatTime(service.rehearsalTime);
+  if (timeValue) {
+    return formatTime(timeValue);
   }
 
   return "No rehearsal scheduled.";
+}
+
+function formatSongListForExport(songList) {
+  const items = getSongListItems(songList);
+
+  if (items.length === 0) {
+    return "No song list provided.";
+  }
+
+  return items.map((item, index) => `${index + 1}. ${item}`).join(" | ");
 }

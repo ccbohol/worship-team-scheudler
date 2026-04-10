@@ -84,29 +84,51 @@
               <span>Start time</span>
               <input type="time" id="serviceTime" name="serviceTime" required />
             </label>
-            <label>
-              <span>Rehearsal date</span>
-              <input
-                type="date"
-                id="rehearsalDate"
-                name="rehearsalDate"
-              />
-            </label>
-            <label>
-              <span>Rehearsal time</span>
-              <input
-                type="time"
-                id="rehearsalTime"
-                name="rehearsalTime"
-              />
-            </label>
+            <div class="rehearsal-block">
+              <p class="rehearsal-heading">Sunday Rehearsal</p>
+              <label>
+                <span>Date</span>
+                <input
+                  type="date"
+                  id="sundayRehearsalDate"
+                  name="sundayRehearsalDate"
+                />
+              </label>
+              <label>
+                <span>Time</span>
+                <input
+                  type="time"
+                  id="sundayRehearsalTime"
+                  name="sundayRehearsalTime"
+                />
+              </label>
+            </div>
+            <div class="rehearsal-block">
+              <p class="rehearsal-heading">Thursday Rehearsal</p>
+              <label>
+                <span>Date</span>
+                <input
+                  type="date"
+                  id="thursdayRehearsalDate"
+                  name="thursdayRehearsalDate"
+                />
+              </label>
+              <label>
+                <span>Time</span>
+                <input
+                  type="time"
+                  id="thursdayRehearsalTime"
+                  name="thursdayRehearsalTime"
+                />
+              </label>
+            </div>
             <label>
               <span>Song list</span>
               <textarea
                 id="songList"
                 name="songList"
-                rows="3"
-                placeholder="List the songs for this service"
+                rows="5"
+                placeholder="Enter one song per line&#10;1. Build My Life&#10;2. Goodness of God"
               ></textarea>
             </label>
             <label>
