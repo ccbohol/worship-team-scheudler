@@ -1,5 +1,6 @@
 platform :ios, '13.0'
 use_modular_headers!
+require 'fileutils'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
@@ -41,5 +42,15 @@ post_install do |installer|
     target.build_configurations.each do |config|
       config.build_settings['CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER'] = 'NO'
     end
+  end
+
+  grpc_private_headers = File.join(__dir__, 'Pods', 'Headers', 'Private')
+  grpc_module_dir = File.join(grpc_private_headers, 'grpc')
+  grpc_source_module = File.join(grpc_private_headers, 'gRPC-Core', 'gRPC-Core.modulemap')
+  grpc_target_module = File.join(grpc_module_dir, 'gRPC-Core.modulemap')
+
+  if File.exist?(grpc_source_module)
+    FileUtils.mkdir_p(grpc_module_dir)
+    FileUtils.cp(grpc_source_module, grpc_target_module)
   end
 end
